@@ -1,17 +1,47 @@
 package com.gridnine;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import com.gridnine.factory.FlightBuilder;
+import com.gridnine.model.Flight;
+import com.gridnine.strategy.filter.FilterBeforeNow;
+import com.gridnine.strategy.filter.FilterExcessiveGroundTime;
+import com.gridnine.strategy.filter.FilterInvalidSegments;
+import com.gridnine.strategy.FlightFilterContext;
+
+import java.util.List;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        List<Flight> flights = FlightBuilder.createFlights();
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
-        }
+        FlightFilterContext context = new FlightFilterContext();
+
+        // Фильтрация по времени вылета
+        context.addFilterStrategy(new FilterBeforeNow());
+        List<Flight> flightsAfterNow = context.applyFilters(flights);
+        System.out.println("\nПерелеты, вылет которых после текущего времени:");
+        flightsAfterNow.forEach(System.out::println);
+
+        // Фильтрация по ошибкам времени (прилет раньше вылета)
+        context = new FlightFilterContext(); // Сбрасываем контекст
+        context.addFilterStrategy(new FilterInvalidSegments());
+        List<Flight> flightsWithInvalidSegments = context.applyFilters(flights);
+        System.out.println("\nПерелеты, где сегменты имеют ошибку времени (прилет раньше вылета):");
+        flightsWithInvalidSegments.forEach(System.out::println);
+
+        // Фильтрация по времени на земле
+        context = new FlightFilterContext(); // Сбрасываем контекст
+        context.addFilterStrategy(new FilterExcessiveGroundTime());
+        List<Flight> flightsWithExcessiveGroundTime = context.applyFilters(flights);
+        System.out.println("\nПерелеты, где время на земле более двух часов:");
+        flightsWithExcessiveGroundTime.forEach(System.out::println);
+
+        //Применение нескольких фильтров
+        context = new FlightFilterContext();
+        context.addFilterStrategy(new FilterBeforeNow());
+        context.addFilterStrategy(new FilterInvalidSegments());
+        context.addFilterStrategy(new FilterExcessiveGroundTime());
+        List<Flight> filteredFlights = context.applyFilters(flights);
+        System.out.println("\nПерелеты после применения нескольких фильтров:");
+        filteredFlights.forEach(System.out::println);
     }
 }
